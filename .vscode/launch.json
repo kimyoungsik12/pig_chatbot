@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Crawl (1회 실행)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "python": "${command:python.interpreterPath}",
+            "console": "integratedTerminal",
+            "args": ["crawl"],
+            "justMyCode": true
+        },
+        {
+            "name": "Python: API Server",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "python": "${command:python.interpreterPath}",
+            "console": "integratedTerminal",
+            "args": ["api"],
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Scheduler",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "python": "${command:python.interpreterPath}",
+            "console": "integratedTerminal",
+            "args": ["scheduler"],
+            "justMyCode": true
+        }
+    ]
+}
