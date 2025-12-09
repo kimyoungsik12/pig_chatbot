@@ -58,16 +58,22 @@ def count_documents():
         print(f"Payload sample: {str(payload)[:500]}")
         print()
     
-    # Count unique documents by url
+    # Count unique documents by url (overall)
     documents_by_url = set()
     documents_by_title = set()
     documents_by_url_title = set()
+    
+    # Count by source type (웹페이지 vs 논문)
+    documents_by_source = defaultdict(set)  # source -> set of doc keys
+    chunks_by_source = defaultdict(int)  # source -> total chunk count
+    points_by_source = defaultdict(int)  # source -> point count
     
     # Also count chunks per document
     chunks_per_doc = defaultdict(int)
     
     # Track all payload keys to understand structure
     all_keys = set()
+    all_sources = set()
     
     for point in all_points:
         payload = point.payload if hasattr(point, 'payload') else {}
@@ -75,6 +81,12 @@ def count_documents():
         # Track all keys
         if isinstance(payload, dict):
             all_keys.update(payload.keys())
+        
+        # Get source (웹페이지 vs 논문 구분)
+        source = payload.get('source', '') or payload.get('metadata', {}).get('source', '') if isinstance(payload.get('metadata'), dict) else ''
+        if not source:
+            source = 'Unknown'
+        all_sources.add(source)
         
         # Try different possible key names
         url = payload.get('url', '') or payload.get('source_url', '') or payload.get('link', '')
@@ -86,11 +98,19 @@ def count_documents():
             if isinstance(metadata, dict):
                 url = metadata.get('url', '') or url
                 title = metadata.get('title', '') or title
+                if not source or source == 'Unknown':
+                    source = metadata.get('source', source)
+        
+        # Count by source
+        points_by_source[source] += 1
         
         # Count by URL
         if url:
             documents_by_url.add(url)
             chunks_per_doc[url] += 1
+            # Count unique documents per source
+            doc_key = f"{url}|{title}"
+            documents_by_source[source].add(doc_key)
         
         # Count by title
         if title:
@@ -100,13 +120,33 @@ def count_documents():
         if url or title:
             doc_key = f"{url}|{title}"
             documents_by_url_title.add(doc_key)
+            chunks_by_source[source] += 1
     
     # Print statistics
     print("\n" + "="*60)
     print("문서 통계 (Document Statistics)")
     print("="*60)
     print(f"총 Point 수 (Total Chunks): {len(all_points):,}")
-    print(f"\n발견된 payload 키들: {sorted(all_keys)}")
+    print(f"\n발견된 Source 타입: {sorted(all_sources)}")
+    print(f"발견된 payload 키들: {sorted(all_keys)}")
+    
+    # Print statistics by source
+    print(f"\n{'='*60}")
+    print("Source별 통계 (Statistics by Source)")
+    print("="*60)
+    for source in sorted(all_sources):
+        unique_docs = len(documents_by_source[source])
+        total_chunks = points_by_source[source]
+        print(f"\n[{source}]")
+        print(f"  - Point 수 (Chunks): {total_chunks:,}개")
+        print(f"  - 고유 문서 수: {unique_docs:,}건")
+        if unique_docs > 0:
+            avg_chunks = total_chunks / unique_docs
+            print(f"  - 문서당 평균 청크 수: {avg_chunks:.2f}개")
+    
+    print(f"\n{'='*60}")
+    print("전체 통계 (Overall Statistics)")
+    print("="*60)
     print(f"\n고유 문서 수 (Unique Documents):")
     print(f"  - URL 기준: {len(documents_by_url):,}건")
     print(f"  - 제목 기준: {len(documents_by_title):,}건")
