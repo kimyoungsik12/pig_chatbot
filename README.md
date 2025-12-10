@@ -200,8 +200,6 @@ pig-farming-llm/
 - 크롤러: `CRAWLER_SCHEDULE_TIME`, `CRAWLER_USER_AGENT`, `CRAWLER_TIMEOUT`, `CRAWLER_MAX_RETRIES`
 - 로깅: `LOG_LEVEL`, `LOG_FILE`
 
-> 이미지 OCR 사용 시 `pytesseract`, `pillow`가 필요하며, 시스템에 Tesseract 실행 파일이 설치되어 있어야 합니다.
-
 ## 개발 가이드
 
 ### 새로운 사이트 크롤러 추가
@@ -264,11 +262,3 @@ ingest_documents(documents, batch_size=100)  # 크기 조정
 ## 라이센스
 
 MIT License
-
-## 기여
-
-Pull Requests 환영합니다!
-
-## 연락처
-
-프로젝트 관련 문의: [이메일 또는 GitHub 이슈]

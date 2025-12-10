@@ -16,14 +16,7 @@
             <div class="controls">
                 <div class="input-row">
                     <div class="input-stack">
-                        <textarea id="question" placeholder="텍스트나 이미지 관련 질문을 입력하세요..."></textarea>
-                        <div class="dropzone" id="dropzone">
-                            <input type="file" id="imageInput" accept="image/*" hidden />
-                            <div class="dropzone-text">
-                                <strong>이미지 끌어다 놓기</strong> 또는 <span id="chooseFile">파일 선택</span>
-                            </div>
-                            <div id="imagePreview" class="preview"></div>
-                        </div>
+                        <textarea id="question" placeholder="질문을 입력하세요."></textarea>
                     </div>
                     <button id="sendBtn" class="send-btn" title="보내기">
                         <span class="send-icon">➤</span>
@@ -39,8 +32,6 @@
         <aside class="panel">
             <div class="meta">참고 문서</div>
             <div id="sources" class="sources">대화를 시작하면 여기에 표시됩니다.</div>
-            <div class="meta" style="margin-top:12px;">이미지 OCR 결과 (디버그)</div>
-            <div id="ocrDebug" class="sources">이미지 업로드 시 OCR 결과가 여기에 표시됩니다.</div>
         </aside>
     </main>
     <script src="/static/main.js"></script>

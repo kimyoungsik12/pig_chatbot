@@ -1,7 +1,7 @@
 """
 FastAPI server for Pig Farming RAG LLM API
 """
-from fastapi import FastAPI, HTTPException, status, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
@@ -9,9 +9,6 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 from loguru import logger
-from io import BytesIO
-import pytesseract
-from PIL import Image
 
 from config import settings
 from rag import get_qa_chain, get_conversational_chain
@@ -99,14 +96,6 @@ class HealthResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.now)
     vectorstore_initialized: bool
     llm_initialized: bool
-
-
-class ImageQueryResponse(BaseModel):
-    """Image query response"""
-    answer: str
-    ocr_text: str
-    source_documents: List[SourceDocument] = Field(default_factory=list)
-    timestamp: datetime = Field(default_factory=datetime.now)
 
 
 # API Endpoints
@@ -219,76 +208,6 @@ async def query_rag(request: QueryRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Query processing failed: {str(e)}"
-        )
-
-
-def ocr_image_to_text(file_bytes: bytes) -> str:
-    """Run OCR on image bytes and return extracted text."""
-    try:
-        img = Image.open(BytesIO(file_bytes))
-        text = pytesseract.image_to_string(img, lang="eng+kor")
-        return text.strip()
-    except Exception as e:
-        logger.error(f"OCR failed: {e}")
-        return ""
-
-
-@app.post("/image-query", response_model=ImageQueryResponse)
-async def image_query(
-    file: UploadFile = File(...),
-    question: Optional[str] = Form(None),
-    use_rag: bool = Form(True),
-    top_k: Optional[int] = Form(None)
-):
-    """
-    Query with an uploaded image (OCR + optional question).
-    """
-    try:
-        content = await file.read()
-        ocr_text = ocr_image_to_text(content)
-        if not ocr_text:
-            ocr_text = "(이미지에서 텍스트를 추출하지 못했습니다.)"
-
-        # Build combined prompt/query
-        user_question = question or "이미지 내용 설명해줘"
-        combined_query = f"{user_question}\n\n이미지 OCR 결과:\n{ocr_text}"
-
-        answer = ""
-        source_docs: List[SourceDocument] = []
-
-        if use_rag:
-            chain = get_qa_chain(top_k=top_k) if top_k else get_or_create_qa_chain()
-            result = chain.invoke({"query": combined_query})
-            answer = result.get("result", "")
-            for doc in result.get("source_documents", []):
-                score = None
-                try:
-                    score = doc.metadata.get("score")
-                except Exception:
-                    pass
-                source_docs.append(SourceDocument(
-                    content=doc.page_content[:500],
-                    title=doc.metadata.get("title"),
-                    url=doc.metadata.get("url"),
-                    source=doc.metadata.get("source"),
-                    score=score
-                ))
-        else:
-            llm = get_llm()
-            llm_resp = llm.invoke([("user", combined_query)])
-            answer = getattr(llm_resp, "content", str(llm_resp))
-
-        return ImageQueryResponse(
-            answer=answer,
-            ocr_text=ocr_text,
-            source_documents=source_docs
-        )
-
-    except Exception as e:
-        logger.error(f"Image query failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Image query failed: {str(e)}"
         )
 
 
