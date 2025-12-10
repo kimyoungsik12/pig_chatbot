@@ -30,13 +30,13 @@ RUN if [ "${INCLUDE_MODEL}" = "true" ]; then \
       echo "Downloading model ${MODEL_REPO_ID} to ${IMAGE_MODEL_PATH}"; \
       pip install --no-cache-dir "huggingface_hub>=0.23" "sentence-transformers>=3.2"; \
       python - <<'PY' \
-from huggingface_hub import snapshot_download \
-snapshot_download( \
-    repo_id="${MODEL_REPO_ID}", \
-    local_dir="${IMAGE_MODEL_PATH}", \
-    local_dir_use_symlinks=False, \
-) \
-PY \
+from huggingface_hub import snapshot_download
+snapshot_download(
+    repo_id="${MODEL_REPO_ID}",
+    local_dir="${IMAGE_MODEL_PATH}",
+    local_dir_use_symlinks=False,
+)
+PY
     ; else \
       echo "Skipping model download (INCLUDE_MODEL=${INCLUDE_MODEL})"; \
     fi
