@@ -119,10 +119,12 @@ curl http://localhost:8000/health
 ```bash
 # 1) .env 준비 후 같은 디렉터리에 둡니다.
 # 2) 도커 빌드 시 임베딩 모델까지 이미지에 포함 (Dockerfile이 직접 다운로드)
-docker build -t pig-llm \
+export HF_TOKEN="hf_..."   # 본인의 HF 토큰
+docker build --no-cache -t pig-llm \
   --build-arg INCLUDE_MODEL=true \
   --build-arg MODEL_REPO_ID=jhgan/ko-sroberta-multitask \
   --build-arg IMAGE_MODEL_PATH=/models/ko-sroberta \
+  --build-arg HUGGINGFACE_TOKEN=${HF_TOKEN} \
   .
 # 3) 컨테이너 실행
 docker run --env-file .env -p 8000:8000 pig-llm
