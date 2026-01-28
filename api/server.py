@@ -17,6 +17,8 @@ from config import settings
 from rag import get_qa_chain, get_conversational_chain
 from core import init_vectorstore, get_llm
 from pipeline import ingest_from_text
+import yaml
+from pathlib import Path
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -39,6 +41,77 @@ app.add_middleware(
 
 # Global QA chain (lazy initialization)
 qa_chain = None
+
+# 고정 답변 데이터 (YAML 파일에서 로드)
+FIXED_RESPONSES = None
+
+
+def load_fixed_responses():
+    """
+    demo_qa.yaml 파일에서 고정 답변 데이터를 로드합니다.
+    파일이 없거나 오류가 발생하면 None을 반환합니다.
+    """
+    global FIXED_RESPONSES
+    if FIXED_RESPONSES is not None:
+        return FIXED_RESPONSES
+    
+    yaml_path = Path(__file__).parent.parent / "demo_qa.yaml"
+    
+    if not yaml_path.exists():
+        logger.info(f"고정 답변 파일을 찾을 수 없습니다: {yaml_path} (정상 동작)")
+        FIXED_RESPONSES = {}
+        return FIXED_RESPONSES
+    
+    try:
+        with open(yaml_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        
+        # 질문 목록을 딕셔너리로 변환
+        fixed_responses = {}
+        for qa in data.get("questions", []):
+            fixed_responses[qa["id"]] = {
+                "question_keywords": qa.get("keywords", []),
+                "answer": qa.get("answer", ""),
+                "source_documents": qa.get("source_documents", [])
+            }
+        
+        FIXED_RESPONSES = fixed_responses
+        logger.info(f"고정 답변 {len(fixed_responses)}개 로드 완료")
+        return FIXED_RESPONSES
+    except Exception as e:
+        logger.warning(f"고정 답변 파일 로드 실패: {e} (정상 동작)")
+        FIXED_RESPONSES = {}
+        return FIXED_RESPONSES
+
+
+def find_fixed_response(question: str) -> Optional[dict]:
+    """
+    질문에서 키워드를 찾아 매칭되는 고정 답변을 반환합니다.
+    키워드가 2개 이상 매칭되어야 합니다.
+    
+    Args:
+        question: 사용자 질문
+        
+    Returns:
+        매칭된 답변 딕셔너리 또는 None
+    """
+    fixed_responses = load_fixed_responses()
+    if not fixed_responses:
+        return None
+    
+    question_lower = question.lower()
+    
+    # 각 고정 응답에 대해 키워드 매칭 확인
+    for response_key, response_data in fixed_responses.items():
+        keywords = response_data.get("question_keywords", [])
+        # 질문에 포함된 키워드 개수 세기
+        matched_count = sum(1 for keyword in keywords if keyword.lower() in question_lower)
+        # 키워드가 2개 이상 매칭되면 매칭
+        if matched_count >= 2:
+            logger.info(f"고정 답변 매칭: {response_key} (매칭된 키워드: {matched_count}개)")
+            return response_data
+    
+    return None
 
 
 def get_or_create_qa_chain():
@@ -155,6 +228,28 @@ async def query_rag(request: QueryRequest):
     try:
         logger.info(f"Received query: {request.question[:50]}...")
 
+        # 먼저 고정 답변 확인
+        fixed_response = find_fixed_response(request.question)
+        if fixed_response:
+            # 고정 답변 반환
+            source_docs = [
+                SourceDocument(
+                    content=doc.get("content", ""),
+                    title=doc.get("title"),
+                    url=doc.get("url"),
+                    source=doc.get("source"),
+                    score=doc.get("score")
+                )
+                for doc in fixed_response.get("source_documents", [])
+            ]
+            
+            logger.info("Fixed response returned")
+            return QueryResponse(
+                answer=fixed_response.get("answer", ""),
+                source_documents=source_docs
+            )
+
+        # 고정 답변이 없으면 원래대로 RAG/LLM 처리
         answer = ""
         source_docs: List[SourceDocument] = []
 
