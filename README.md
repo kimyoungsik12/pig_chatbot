@@ -114,6 +114,24 @@ curl -X POST "http://localhost:8000/ingest" \
 curl http://localhost:8000/health
 ```
 
+## Docker로 실행 (모델 이미지에 포함)
+
+```bash
+# 1) .env 준비 후 같은 디렉터리에 둡니다.
+# 2) 도커 빌드 시 임베딩 모델까지 이미지에 포함 (Dockerfile이 직접 다운로드)
+export HF_TOKEN="hf_..."   # 본인의 HF 토큰
+docker build --no-cache -t pig-llm \
+  --build-arg INCLUDE_MODEL=true \
+  --build-arg MODEL_REPO_ID=jhgan/ko-sroberta-multitask \
+  --build-arg IMAGE_MODEL_PATH=/models/ko-sroberta \
+  --build-arg HUGGINGFACE_TOKEN=${HF_TOKEN} \
+  .
+# 3) 컨테이너 실행
+docker run --env-file .env -p 8000:8000 pig-llm
+```
+
+모델을 바꾸고 싶다면 `MODEL_REPO_ID`를 원하는 Hugging Face repo id로 바꿔서 빌드하세요. 이미지에 모델을 넣지 않고 싶다면 `INCLUDE_MODEL=false`(기본값)로 빌드하면 됩니다.
+
 ## 커스텀 크롤러 추가
 
 ### 1. 새 크롤러 파일 생성
@@ -200,8 +218,6 @@ pig-farming-llm/
 - 크롤러: `CRAWLER_SCHEDULE_TIME`, `CRAWLER_USER_AGENT`, `CRAWLER_TIMEOUT`, `CRAWLER_MAX_RETRIES`
 - 로깅: `LOG_LEVEL`, `LOG_FILE`
 
-> 이미지 OCR 사용 시 `pytesseract`, `pillow`가 필요하며, 시스템에 Tesseract 실행 파일이 설치되어 있어야 합니다.
-
 ## 개발 가이드
 
 ### 새로운 사이트 크롤러 추가
@@ -264,11 +280,3 @@ ingest_documents(documents, batch_size=100)  # 크기 조정
 ## 라이센스
 
 MIT License
-
-## 기여
-
-Pull Requests 환영합니다!
-
-## 연락처
-
-프로젝트 관련 문의: [이메일 또는 GitHub 이슈]

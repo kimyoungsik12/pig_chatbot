@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PigPeople LLM Chat</title>
+    <title>Pig LLM Chat</title>
     <link rel="stylesheet" href="/static/style.css" />
 </head>
+
 <body>
     <header>
-        <h1>양돈 LLM 챗봇</h1>
+        <h1>Pig LLM Chat</h1>
     </header>
     <main>
         <section class="panel">
@@ -16,14 +18,7 @@
             <div class="controls">
                 <div class="input-row">
                     <div class="input-stack">
-                        <textarea id="question" placeholder="텍스트나 이미지 관련 질문을 입력하세요..."></textarea>
-                        <div class="dropzone" id="dropzone">
-                            <input type="file" id="imageInput" accept="image/*" hidden />
-                            <div class="dropzone-text">
-                                <strong>이미지 끌어다 놓기</strong> 또는 <span id="chooseFile">파일 선택</span>
-                            </div>
-                            <div id="imagePreview" class="preview"></div>
-                        </div>
+                        <textarea id="question" placeholder="질문을 입력하세요."></textarea>
                     </div>
                     <button id="sendBtn" class="send-btn" title="보내기">
                         <span class="send-icon">➤</span>
@@ -45,4 +40,5 @@
     </main>
     <script src="/static/main.js"></script>
 </body>
+
 </html>
